@@ -1,0 +1,101 @@
+</header>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total Market Cap</div>
+        <div class="stat-value" id="totalMarketCap">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">24h Volume</div>
+        <div class="stat-value" id="totalVolume">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">BTC Dominance</div>
+        <div class="stat-value" id="btcDominance">—</div>
+      </div>
+    </div>
+
+    <div id="cryptoGrid" class="grid">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        Fetching live prices...
+      </div>
+    </div>
+
+    <footer>
+      Built by <a href="https://github.com/penchuks" target="_blank">penchuks</a> · 
+      Data from CoinGecko API · 
+      <span id="footerTime"></span>
+    </footer>
+  </div>
+
+  <script>
+    const COINS = [
+      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', icon: '₿', rank: 1 },
+      { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', rank: 2 },
+      { id: 'solana', symbol: 'SOL', name: 'Solana', icon: '◎', rank: 5 },
+      { id: 'binancecoin', symbol: 'BNB', name: 'BNB', icon: '⬡', rank: 4 },
+      { id: 'ripple', symbol: 'XRP', name: 'XRP', icon: '✕', rank: 6 },
+      { id: 'cardano', symbol: 'ADA', name: 'Cardano', icon: '₳', rank: 8 },
+    ];
+
+    function formatPrice(price) {
+      if (price >= 1000) return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (price >= 1) return '$' + price.toFixed(2);
+      return '$' + price.toFixed(4);
+    }
+
+    function formatLarge(num) {
+      if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
+      if (num >= 1e9) return '$' + (num / 1e9).toFixed(2) + 'B';
+      if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
+      return '$' + num.toFixed(0);
+    }
+
+    async function fetchPrices() {
+      const grid = document.getElementById('cryptoGrid');
+      grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Fetching live prices...</div>';
+
+      try {
+        const ids = COINS.map(c => c.id).join(',');
+        const res = await fetch(
+          https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h
+        );
+
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+
+        // Update stats
+        const totalMcap = data.reduce((s, c) => s + (c.market_cap || 0), 0);
+        const totalVol = data.reduce((s, c) => s + (c.total_volume || 0), 0);
+        const btc = data.find(c => c.id === 'bitcoin');
+        const btcDom = btc ? ((btc.market_cap / totalMcap) * 100).toFixed(1) + '%' : '—';
+
+        document.getElementById('totalMarketCap').textContent = formatLarge(totalMcap);
+        document.getElementById('totalVolume').textContent = formatLarge(totalVol);
+        document.getElementById('btcDominance').textContent = btcDom;
+
+        // Render cards
+        grid.innerHTML = '';
+        data.forEach((coin, i) => {
+          const change = coin.price_change_percentage_24h || 0;
+          const isUp = change >= 0;
+          const coinMeta = COINS.find(c => c.id === coin.id) || {};
+
+          const card = document.createElement('div');
+          card.className = 'crypto-card';
+          card.style.animationDelay = ${0.1 + i * 0.1}s;
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="coin-info">
+                <div class="coin-icon">${coinMeta.icon || '🪙'}</div>
+                <div>
+                  <div class="coin-name">${coin.name}</div>
+                  <div class="coin-symbol">${coin.symbol.toUpperCase()}</div>
+                </div>
+              </div>
+              <div class="rank">#${coin.market_cap_rank}</div>
+            </div>
+            <div class="price">${formatPrice(coin.current_price)}</div>
+            <span class="change ${isUp ? 'up' : 'down'}">
+              ${isUp ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%
