@@ -1,101 +1,163 @@
-</header>
-
-    <div class="stats-bar">
-      <div class="stat-card">
-        <div class="stat-label">Total Market Cap</div>
-        <div class="stat-value" id="totalMarketCap">—</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CryptoTracker | penchuks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #040d0a;
+      --surface: #0a1a14;
+      --card: #0f2318;
+      --border: #1a3d28;
+      --accent: #00ff87;
+      --red: #ff4d6d;
+      --text: #e8f5ee;
+      --muted: #4a7a60;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; position: relative; z-index: 1; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 50px; flex-wrap: wrap; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 42px; height: 42px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--bg); font-weight: 900; }
+    .logo h1 { font-size: 1.4rem; font-weight: 800; }
+    .logo span { color: var(--accent); }
+    .live-badge { display: flex; align-items: center; gap: 8px; font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+    .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .refresh-btn { background: var(--card); border: 1px solid var(--border); color: var(--accent); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Space Mono', monospace; font-size: 0.8rem; transition: all 0.2s; }
+    .refresh-btn:hover { background: var(--accent); color: var(--bg); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .crypto-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: all 0.3s; position: relative; overflow: hidden; }
+    .crypto-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transition: transform 0.3s; }
+    .crypto-card:hover::before { transform: scaleX(1); }
+    .crypto-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,255,135,0.08); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .coin-info { display: flex; align-items: center; gap: 12px; }
+    .coin-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; background: var(--surface); border: 1px solid var(--border); }
+    .coin-name { font-size: 1rem; font-weight: 800; }
+    .coin-symbol { font-size: 0.75rem; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .rank { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 4px 8px; border-radius: 6px; }
+    .price { font-size: 1.6rem; font-weight: 800; font-family: 'Space Mono', monospace; margin-bottom: 8px; letter-spacing: -1px; }
+    .change { display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; font-family: 'Space Mono', monospace; }
+    .change.up { background: rgba(0,255,135,0.1); color: var(--accent); }
+    .change.down { background: rgba(255,77,109,0.1); color: var(--red); }
+    .card-bottom { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .meta-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-family: 'Space Mono', monospace; margin-bottom: 4px; }
+    .meta-value { font-size: 0.85rem; font-weight: 600; }
+    .loading { grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .spinner { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error { grid-column: 1/-1; text-align: center; padding: 40px; color: var(--red); font-family: 'Space Mono', monospace; background: rgba(255,77,109,0.05); border: 1px solid rgba(255,77,109,0.2); border-radius: 12px; }
+    footer { text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid var(--border); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.75rem; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">₿</div>
+        <h1>Crypto<span>Tracker</span></h1>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">24h Volume</div>
-        <div class="stat-value" id="totalVolume">—</div>
+      <div class="live-badge">
+        <div class="dot"></div>
+        <span id="updateTime">Loading...</span>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">BTC Dominance</div>
-        <div class="stat-value" id="btcDominance">—</div>
-      </div>
-    </div>
+      <button class="refresh-btn" onclick="fetchPrices()">⟳ Refresh</button>
+    </header>
 
     <div id="cryptoGrid" class="grid">
-      <div class="loading">
-        <div class="loading-spinner"></div>
-        Fetching live prices...
-      </div>
+      <div class="loading"><div class="spinner"></div>Fetching live prices...</div>
     </div>
 
     <footer>
-      Built by <a href="https://github.com/penchuks" target="_blank">penchuks</a> · 
-      Data from CoinGecko API · 
-      <span id="footerTime"></span>
+      Built by <a href="https://github.com/penchuks" target="_blank">penchuks</a> · Data from CoinCap API · <span id="footerTime"></span>
     </footer>
   </div>
 
   <script>
     const COINS = [
-      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', icon: '₿', rank: 1 },
-      { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', icon: 'Ξ', rank: 2 },
-      { id: 'solana', symbol: 'SOL', name: 'Solana', icon: '◎', rank: 5 },
-      { id: 'binancecoin', symbol: 'BNB', name: 'BNB', icon: '⬡', rank: 4 },
-      { id: 'ripple', symbol: 'XRP', name: 'XRP', icon: '✕', rank: 6 },
-      { id: 'cardano', symbol: 'ADA', name: 'Cardano', icon: '₳', rank: 8 },
+      { id: 'bitcoin',      symbol: 'BTC', icon: '₿' },
+      { id: 'ethereum',     symbol: 'ETH', icon: 'Ξ' },
+      { id: 'solana',       symbol: 'SOL', icon: '◎' },
+      { id: 'binance-coin', symbol: 'BNB', icon: '⬡' },
+      { id: 'xrp',          symbol: 'XRP', icon: '✕' },
+      { id: 'cardano',      symbol: 'ADA', icon: '₳' },
     ];
 
-    function formatPrice(price) {
-      if (price >= 1000) return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      if (price >= 1) return '$' + price.toFixed(2);
-      return '$' + price.toFixed(4);
+    function fmt(p) {
+      p = parseFloat(p);
+      if (p >= 1000) return '$' + p.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+      if (p >= 1) return '$' + p.toFixed(2);
+      return '$' + p.toFixed(4);
     }
 
-    function formatLarge(num) {
-      if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
-      if (num >= 1e9) return '$' + (num / 1e9).toFixed(2) + 'B';
-      if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
-      return '$' + num.toFixed(0);
+    function fmtB(n) {
+      n = parseFloat(n);
+      if (n >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T';
+      if (n >= 1e9)  return '$' + (n/1e9).toFixed(2) + 'B';
+      if (n >= 1e6)  return '$' + (n/1e6).toFixed(2) + 'M';
+      return '$' + n.toFixed(0);
     }
 
     async function fetchPrices() {
       const grid = document.getElementById('cryptoGrid');
-      grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Fetching live prices...</div>';
-
+      grid.innerHTML = '<div class="loading"><div class="spinner"></div>Fetching live prices...</div>';
       try {
         const ids = COINS.map(c => c.id).join(',');
-        const res = await fetch(
-          https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h
-        );
+        const res = await fetch('https://api.coincap.io/v2/assets?ids=' + ids);
+        if (!res.ok) throw new Error();
+        const { data } = await res.json();
 
-        if (!res.ok) throw new Error('API error');
-        const data = await res.json();
-
-        // Update stats
-        const totalMcap = data.reduce((s, c) => s + (c.market_cap || 0), 0);
-        const totalVol = data.reduce((s, c) => s + (c.total_volume || 0), 0);
-        const btc = data.find(c => c.id === 'bitcoin');
-        const btcDom = btc ? ((btc.market_cap / totalMcap) * 100).toFixed(1) + '%' : '—';
-
-        document.getElementById('totalMarketCap').textContent = formatLarge(totalMcap);
-        document.getElementById('totalVolume').textContent = formatLarge(totalVol);
-        document.getElementById('btcDominance').textContent = btcDom;
-
-        // Render cards
         grid.innerHTML = '';
-        data.forEach((coin, i) => {
-          const change = coin.price_change_percentage_24h || 0;
+        COINS.forEach(meta => {
+          const coin = data.find(d => d.id === meta.id);
+          if (!coin) return;
+          const change = parseFloat(coin.changePercent24Hr) || 0;
           const isUp = change >= 0;
-          const coinMeta = COINS.find(c => c.id === coin.id) || {};
-
           const card = document.createElement('div');
           card.className = 'crypto-card';
-          card.style.animationDelay = ${0.1 + i * 0.1}s;
           card.innerHTML = `
             <div class="card-top">
               <div class="coin-info">
-                <div class="coin-icon">${coinMeta.icon || '🪙'}</div>
+                <div class="coin-icon">${meta.icon}</div>
                 <div>
                   <div class="coin-name">${coin.name}</div>
-                  <div class="coin-symbol">${coin.symbol.toUpperCase()}</div>
+                  <div class="coin-symbol">${coin.symbol}</div>
                 </div>
               </div>
-              <div class="rank">#${coin.market_cap_rank}</div>
+              <div class="rank">#${coin.rank}</div>
             </div>
-            <div class="price">${formatPrice(coin.current_price)}</div>
-            <span class="change ${isUp ? 'up' : 'down'}">
-              ${isUp ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%
+            <div class="price">${fmt(coin.priceUsd)}</div>
+            <span class="change ${isUp?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(change).toFixed(2)}%</span>
+            <div class="card-bottom">
+              <div><div class="meta-label">Market Cap</div><div class="meta-value">${fmtB(coin.marketCapUsd)}</div></div>
+              <div><div class="meta-label">24h Volume</div><div class="meta-value">${fmtB(coin.volumeUsd24Hr)}</div></div>
+              <div><div class="meta-label">Supply</div><div class="meta-value">${fmtB(coin.supply)}</div></div>
+            </div>`;
+          grid.appendChild(card);
+        });
+
+        const now = new Date();
+        document.getElementById('updateTime').textContent = 'Live · ' + now.toLocaleTimeString();
+        document.getElementById('footerTime').textContent = now.toLocaleDateString();
+      } catch(e) {
+        grid.innerHTML = '<div class="error">⚠️ Failed to load prices.<br><br><button class="refresh-btn" onclick="fetchPrices()" style="margin-top:12px">Try Again</button></div>';
+      }
+    }
+
+    fetchPrices();
+    setInterval(fetchPrices, 60000);
+  </script>
+</body>
+</html>
